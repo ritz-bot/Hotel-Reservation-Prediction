@@ -8,6 +8,8 @@ app = Flask(__name__)
 
 loaded_model = joblib.load(MODEL_OUTPUT_PATH)
 
+
+
 @app.route('/',methods=['GET','POST'])
 def index():
     if request.method=='POST':
@@ -35,7 +37,12 @@ def index():
     return render_template("index.html" , prediction=None)
 
 if __name__=="__main__":
-    app.run(host='0.0.0.0' , port=5000)
+    port = int(os.getenv("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
+
+
+
+
 '''
 import joblib
 import numpy as np
