@@ -25,7 +25,7 @@ pipeline {
                     python -m venv ${VENV_DIR}
                     . ${VENV_DIR}/bin/activate
                     pip install --upgrade pip
-                    pip install -e .
+                    if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install -e .; fi
                     '''
                 }
             }
@@ -41,8 +41,10 @@ pipeline {
                         gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
                         gcloud config set project ${GCP_PROJECT}
                         gcloud auth configure-docker --quiet
+                        if [ ! -f Dockerfile ]; then echo "Dockerfile not found"; exit 1; fi
                         docker build -t gcr.io/${GCP_PROJECT}/ml-project:latest .
-                        docker push gcr.io/${GCP_PROJECT}/ml-project:latest 
+                        docker push gcr.io/${GCP_PROJECT}/ml-project:latest
+                        docker system prune -f
                         '''
                     }
                 }
@@ -62,7 +64,12 @@ pipeline {
                             --image=gcr.io/${GCP_PROJECT}/ml-project:latest \
                             --platform=managed \
                             --region=us-central1 \
-                            --allow-unauthenticated
+                            --allow-unauthenticated \
+                            --port=8080 \
+                            --timeout=300 \
+                            --cpu=2 \
+                            --memory=2Gi
+                        gcloud run services logs read ml-project --limit=100 --region=us-central1
                         '''
                     }
                 }
